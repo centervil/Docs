@@ -1,4 +1,3 @@
-```markdown
 ---
 title: "2025-03-18 Zenn Article Format Fix"
 emoji: "🐛"
@@ -9,11 +8,6 @@ published: false
 
 :::message
 この記事はgemini-2.0-flash-001によって自動生成されています。
-
-:::
-
-:::message
-この記事は[LLM Model名]によって自動生成されています。
 私の毎日の開発サイクルについては、[LLM対話で実現する継続的な開発プロセス](https://zenn.dev/centervil/articles/2025-03-12-development-cycle-introduction)をご覧ください。
 :::
 
@@ -112,4 +106,3 @@ title: "Example Title"
 ## まとめ
 
 今回の開発では、CI/CDパイプラインで生成されるZenn公開用記事のフォーマット問題を修正し、記事全体がコードブロックで囲まれてしまう問題を解決しました。これにより、Zennへの記事公開プロセスを自動化し、開発効率を向上させることができました。今後は、生成される記事の品質向上や、他のプラットフォームへの対応など、さらなる改善に取り組んでいきたいと思います。
-```
