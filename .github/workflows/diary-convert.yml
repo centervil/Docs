@@ -1,0 +1,60 @@
+name: Convert Dev Diary to Zenn Article
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'dev-records/**.md'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  diary-converter:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 2  # コミット履歴を2件取得（変更ファイル検出のため）
+
+      - name: Find latest updated diary file
+        id: find-diary
+        run: |
+          # 最新の変更された開発日記ファイルを検出
+          LATEST_DIARY=$(git diff-tree --no-commit-id --name-only -r HEAD | grep "dev-records/.*\.md" | head -n 1)
+          
+          # 変更されたファイルがない場合は最新の開発日記を使用
+          if [ -z "$LATEST_DIARY" ]; then
+            LATEST_DIARY=$(find dev-records -type f -name "*.md" | sort -r | head -n 1)
+          fi
+          
+          # Zenn用のファイル名を生成
+          OUTPUT_FILENAME=$(./tools/diary-filename-processor.sh "$LATEST_DIARY")
+          
+          # articlesディレクトリの存在確認
+          mkdir -p articles
+          
+          echo "diary_file=$LATEST_DIARY" >> $GITHUB_OUTPUT
+          echo "output_file=articles/$OUTPUT_FILENAME" >> $GITHUB_OUTPUT
+          echo "LATEST_DIARY=$LATEST_DIARY" >> $GITHUB_ENV
+
+      - name: Run diary-converter
+        uses: centervil/Diary-Converter@main
+        with:
+          source_file: ${{ steps.find-diary.outputs.diary_file }}
+          destination_file: ${{ steps.find-diary.outputs.output_file }}
+          api_key: ${{ secrets.GOOGLE_API_KEY }}
+          model: gemini-2.0-flash-001
+          template: dev-docs/zenn_template.md
+          debug: 'true'
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "GitHub Actions Bot"
+          git config --global user.email "actions@github.com"
+          git add articles/
+          git commit -m "Add new Zenn article from ${{ env.LATEST_DIARY }}"
+          git push origin main 
