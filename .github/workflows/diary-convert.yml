@@ -20,6 +20,11 @@ jobs:
         with:
           fetch-depth: 2  # コミット履歴を2件取得（変更ファイル検出のため）
 
+      - name: Setup environment
+        run: |
+          # スクリプトに実行権限を付与
+          chmod +x ./tools/diary-filename-processor.sh
+
       - name: Find latest updated diary file
         id: find-diary
         run: |
@@ -31,8 +36,12 @@ jobs:
             LATEST_DIARY=$(find dev-records -type f -name "*.md" | sort -r | head -n 1)
           fi
           
+          echo "LATEST_DIARY: $LATEST_DIARY" 
+          
           # Zenn用のファイル名を生成
           OUTPUT_FILENAME=$(./tools/diary-filename-processor.sh "$LATEST_DIARY")
+          
+          echo "OUTPUT_FILENAME: $OUTPUT_FILENAME"
           
           # articlesディレクトリの存在確認
           mkdir -p articles
