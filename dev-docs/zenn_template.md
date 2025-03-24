@@ -1,8 +1,10 @@
 ---
 title: "[日付] [テーマ]"
+# 注: diary-converterツールが対応するまでの暫定対応
+# 実際のタイトルは「[プロジェクト名] 開発日記 #[連番]: [テーマ]」形式にしてください
 emoji: "絵文字"
 type: "idea"
-topics: ["トピック1", "トピック2", "トピック3"]
+topics: ["開発日記", "トピック2", "トピック3"]
 published: false
 ---
 
@@ -10,6 +12,11 @@ published: false
 この記事は[LLM Model名]によって自動生成されています。
 私の毎日の開発サイクルについては、[LLM対話で実現する継続的な開発プロセス](https://zenn.dev/centervil/articles/2025-03-12-development-cycle-introduction)をご覧ください。
 :::
+
+## 関連リンク
+<!-- 注: diary-converterツールが対応するまでの暫定対応。実際の記事では以下の情報を手動で追加してください -->
+- **プロジェクトリポジトリ**: [プロジェクト名](https://github.com/centervil/[リポジトリ名])
+- **前回の開発日記**: [前回のタイトル](https://zenn.dev/centervil/articles/[前回の記事スラッグ])
 
 # [テーマ]
 
