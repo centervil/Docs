@@ -73,7 +73,7 @@ jobs:
           model: gemini-2.5-pro-exp-03-25
           debug: 'true'
           prev_article: ${{ steps.find-prev-article.outputs.prev_article_slug }}
-          template: '${{ github.action_path }}/templates/zenn_template.md'
+          template: ${{ github.action_path }}/templates/zenn_template.md
 
       - name: Commit and push changes
         run: |
