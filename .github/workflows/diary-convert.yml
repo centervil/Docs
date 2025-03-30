@@ -50,15 +50,29 @@ jobs:
           echo "output_file=articles/$OUTPUT_FILENAME" >> $GITHUB_OUTPUT
           echo "LATEST_DIARY=$LATEST_DIARY" >> $GITHUB_ENV
 
+      - name: Find previous article slug
+        id: find-prev-article
+        run: |
+          # 前回の記事スラッグを検出
+          LATEST_ARTICLE=$(find articles -type f -name "*.md" | sort -r | head -n 1)
+          if [ -n "$LATEST_ARTICLE" ]; then
+            PREV_ARTICLE_SLUG=$(basename "$LATEST_ARTICLE" .md)
+            echo "PREV_ARTICLE_SLUG: $PREV_ARTICLE_SLUG"
+            echo "prev_article_slug=$PREV_ARTICLE_SLUG" >> $GITHUB_OUTPUT
+          else
+            echo "前回の記事が見つかりません"
+            echo "prev_article_slug=" >> $GITHUB_OUTPUT
+          fi
+
       - name: Run diary-converter
         uses: centervil/Diary-Converter@main
         with:
           source_file: ${{ steps.find-diary.outputs.diary_file }}
           destination_file: ${{ steps.find-diary.outputs.output_file }}
           api_key: ${{ secrets.GOOGLE_API_KEY }}
-          model: gemini-2.0-flash-001
-          template: dev-docs/zenn_template.md
+          model: gemini-2.5-pro-exp-03-25
           debug: 'true'
+          prev_article: ${{ steps.find-prev-article.outputs.prev_article_slug }}
 
       - name: Commit and push changes
         run: |
@@ -66,4 +80,4 @@ jobs:
           git config --global user.email "actions@github.com"
           git add articles/
           git commit -m "Add new Zenn article from ${{ env.LATEST_DIARY }}"
-          git push origin main 
+          git push origin main
