@@ -65,7 +65,7 @@ jobs:
           source_file: ${{ steps.find-diary.outputs.diary_file }}
           destination_file: ${{ steps.find-diary.outputs.output_file }}
           api_key: ${{ secrets.GOOGLE_API_KEY }}
-          model: gemini-2.5-pro-exp-03-25
+          model: gemini-2.0-flash-thinking-exp-01-21
           debug: 'true'
           prev_article: ${{ steps.find-prev-article.outputs.prev_article_slug }}
           template: templates/zenn_template.md
