@@ -28,13 +28,8 @@ jobs:
       - name: Find latest updated diary file
         id: find-diary
         run: |
-          # 最新の変更された開発日記ファイルを検出
-          LATEST_DIARY=$(git diff-tree --no-commit-id --name-only -r HEAD | grep "dev-records/.*\.md" | head -n 1)
-          
-          # 変更されたファイルがない場合は最新の開発日記を使用
-          if [ -z "$LATEST_DIARY" ]; then
-            LATEST_DIARY=$(find dev-records -type f -name "*.md" | sort -r | head -n 1)
-          fi
+          # 最新の開発日記ファイルを検出
+          LATEST_DIARY=$(find dev-records -type f -name "*.md" | sort -r | head -n 1)
           
           echo "LATEST_DIARY: $LATEST_DIARY" 
           
