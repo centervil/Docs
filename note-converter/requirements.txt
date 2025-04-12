@@ -22,4 +22,24 @@ black>=23.11.0
 
 # Documentation
 mkdocs>=1.5.3
-mkdocs-material>=9.4.14 
+mkdocs-material>=9.4.14
+
+# テスト関連
+pytest==7.4.0
+pytest-cov==4.1.0
+pytest-mock==3.11.1
+
+# コード品質チェック
+flake8==6.1.0
+
+# マークダウン処理
+markdown==3.4.4
+
+# APIクライアント
+requests==2.31.0
+
+# 環境変数管理
+python-dotenv==1.0.0
+
+# ロギング拡張
+structlog==23.1.0 
