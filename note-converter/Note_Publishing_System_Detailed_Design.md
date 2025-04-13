@@ -299,4 +299,139 @@ jobs:
 2. GitHub Actionsがトリガー
 3. Dockerイメージをビルド
 4. テストを実行
-5. 結果を通知 
+5. 結果を通知
+
+## 8. モジュール構成と処理フロー
+
+### 8.1 モジュール構成図
+
+```
++-------------------+      +------------------+      +------------------+
+|                   |      |                  |      |                  |
+|  note_converter.py+----->+ openrouter_client+----->+    LLM API      |
+|   (メインスクリプト) |      |     (API連携)    |      |  (外部サービス)  |
+|                   |      |                  |      |                  |
++--------+----------+      +------------------+      +------------------+
+         |
+         |
+         v
++--------+----------+      +------------------+      +------------------+
+|                   |      |                  |      |                  |
+|  markdown_utils.py+----->+  note_api_client +----->+   note.com API  |
+|  (マークダウン処理)  |      |    (API連携)     |      |  (外部サービス)  |
+|                   |      |                  |      |                  |
++-------------------+      +------------------+      +------------------+
+```
+
+### 8.2 モジュールの役割
+
+#### 8.2.1 メインモジュール
+- **note_converter.py**: システム全体の制御とワークフローの管理
+  - コマンドライン引数の処理
+  - 入力ファイルの読み込み
+  - 各処理モジュールの呼び出し制御
+  - エラーハンドリングとログ出力
+
+#### 8.2.2 ユーティリティモジュール
+- **markdown_utils.py**: マークダウン処理に特化したユーティリティ
+  - `parse_markdown`: マークダウンを構造化データに変換
+  - `extract_headers`: 見出し抽出と階層構造分析
+  - `extract_lists`: リスト項目と階層関係の抽出
+  - `extract_code_blocks`: コードブロックとその言語情報の抽出
+  - `format_markdown_for_note`: note.com向け最適化
+  - `clean_markdown`: 余分な空白行や書式の整理
+
+#### 8.2.3 API連携モジュール（予定）
+- **openrouter_client.py**: LLM API連携
+  - API認証と接続管理
+  - プロンプト生成と送信
+  - レスポンス処理とエラーハンドリング
+
+- **note_api_client.py**: note.com API連携
+  - セッションベース認証
+  - 記事下書き投稿処理
+  - エラー処理とリトライ機能
+
+#### 8.2.4 エラーハンドリング（予定）
+- **error_handler.py**: エラー処理共通モジュール
+  - 例外の捕捉と分類
+  - ログ出力フォーマット
+  - リトライ制御
+
+### 8.3 全体処理フロー
+
+```mermaid
+flowchart TD
+    START([開始]) --> INPUT[入力ファイル読み込み]
+    INPUT --> FORMAT[フォーマット指示読み込み]
+    FORMAT --> CHECK{ドライラン?}
+    CHECK -->|Yes| LOG[ログ出力] --> END([終了])
+    CHECK -->|No| PARSE[マークダウン解析]
+    PARSE --> LLM[LLMによる変換処理]
+    LLM --> CLEAN[マークダウン整形]
+    CLEAN --> FORMAT_NOTE[note形式に最適化]
+    FORMAT_NOTE --> OUTPUT[出力ファイル生成]
+    OUTPUT --> NOTE_API[note.comに投稿]
+    NOTE_API --> END
+```
+
+### 8.4 マークダウン処理フロー詳細
+
+```mermaid
+flowchart TD
+    INPUT([マークダウン入力]) --> PARSE[parse_markdown]
+    PARSE --> HEADERS[extract_headers]
+    PARSE --> LISTS[extract_lists]
+    PARSE --> CODE[extract_code_blocks]
+    PARSE --> PARAS[段落抽出]
+    
+    HEADERS --> STRUCTURE[構造化データ]
+    LISTS --> STRUCTURE
+    CODE --> STRUCTURE
+    PARAS --> STRUCTURE
+    
+    STRUCTURE --> CLEAN[clean_markdown]
+    CLEAN --> FORMAT[format_markdown_for_note]
+    FORMAT --> OUTPUT([最適化されたマークダウン])
+```
+
+### 8.5 現在の実装状況
+
+#### 8.5.1 実装済みモジュール
+- **note_converter.py**: 基本的なワークフロー処理
+  - コマンドライン引数の処理
+  - ファイル読み込み・出力処理
+  - ドライランモード
+
+- **markdown_utils.py**: マークダウン処理ユーティリティ
+  - すべての基本機能実装完了
+  - テストカバレッジ96%達成
+
+#### 8.5.2 実装予定モジュール
+- **openrouter_client.py**: LLM API連携
+- **note_api_client.py**: note.com API連携
+- **error_handler.py**: エラー処理共通モジュール
+
+#### 8.5.3 テスト状況
+- **ユニットテスト**: 実装済みモジュールのテスト完了
+- **統合テスト**: 一部実装、今後拡充予定
+
+### 8.6 今後の実装計画
+
+1. **OpenRouter API連携**
+   - LLMプロンプト生成機能
+   - APIレスポンス処理
+   - エラーハンドリング
+
+2. **note.com API連携**
+   - セッション認証機能
+   - 下書き投稿機能
+   - 記事メタデータ設定
+
+3. **CI/CD拡充**
+   - デプロイパイプライン拡充
+   - 自動化スクリプト改善
+
+4. **エラーハンドリング強化**
+   - 共通エラー処理の実装
+   - ロギング機能の拡充 
