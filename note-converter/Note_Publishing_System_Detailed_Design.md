@@ -395,6 +395,75 @@ flowchart TD
     FORMAT --> OUTPUT([最適化されたマークダウン])
 ```
 
+### 8.4.1 モジュール間データフロー詳細
+
+```mermaid
+flowchart TD
+    subgraph Input
+        MD[研究資料マークダウン]
+        TEMPLATE[記事テンプレート]
+    end
+    
+    subgraph Core["note_converter.py (メイン処理)"]
+        CONFIG[設定読み込み]
+        ARGS[引数処理]
+        WORKFLOW[ワークフロー制御]
+    end
+    
+    subgraph MD_Utils["markdown_utils.py"]
+        PARSE[parse_markdown]
+        EXTRACT[構造抽出処理]
+        CLEAN[clean_markdown]
+        FORMAT[format_for_note]
+    end
+    
+    subgraph LLM_API["openrouter_client.py"]
+        AUTH_LLM[API認証]
+        PROMPT[プロンプト生成]
+        SEND[APIリクエスト送信]
+        RESP[レスポンス処理]
+    end
+    
+    subgraph Note_API["note_api_client.py"]
+        AUTH_NOTE[セッション認証]
+        POST[下書き投稿]
+        META[メタデータ設定]
+    end
+    
+    subgraph Error["error_handler.py"]
+        LOG[ログ記録]
+        RETRY[リトライ制御]
+        NOTIFY[通知処理]
+    end
+    
+    MD --> Core
+    TEMPLATE --> Core
+    Core --> MD_Utils
+    MD_Utils --> STRUCTURE[構造化データ]
+    STRUCTURE --> LLM_API
+    Core --> LLM_API
+    LLM_API --> CONVERTED[変換済みコンテンツ]
+    CONVERTED --> MD_Utils
+    MD_Utils --> FORMATTED[整形済みマークダウン]
+    FORMATTED --> Note_API
+    Core --> Note_API
+    
+    Core -.-> Error
+    MD_Utils -.-> Error
+    LLM_API -.-> Error
+    Note_API -.-> Error
+    
+    classDef core fill:#f9f,stroke:#333,stroke-width:2px
+    classDef utils fill:#bbf,stroke:#333,stroke-width:1px
+    classDef api fill:#bfb,stroke:#333,stroke-width:1px
+    classDef error fill:#fbb,stroke:#333,stroke-width:1px
+    
+    class Core core
+    class MD_Utils utils
+    class LLM_API,Note_API api
+    class Error error
+```
+
 ### 8.5 現在の実装状況
 
 #### 8.5.1 実装済みモジュール
@@ -416,7 +485,84 @@ flowchart TD
 - **ユニットテスト**: 実装済みモジュールのテスト完了
 - **統合テスト**: 一部実装、今後拡充予定
 
-### 8.6 今後の実装計画
+### 8.6 システムのレイヤー構造
+
+```mermaid
+flowchart TD
+    UI[ユーザーインターフェース\nコマンドライン引数] --> |入力| APP[アプリケーション層\nnote_converter.py]
+    APP --> |変換処理| DOMAIN[ドメイン層\nmarkdown_utils.py]
+    APP --> |エラー処理| ERROR[エラー層\nerror_handler.py]
+    APP --> |外部連携| API[API層]
+    API --> |LLM API| LLM[OpenRouter API\nopenrouter_client.py]
+    API --> |投稿 API| NOTE[note.com API\nnote_api_client.py]
+    
+    classDef ui fill:#e6f7ff,stroke:#1890ff,stroke-width:1px
+    classDef app fill:#f9f0ff,stroke:#722ed1,stroke-width:2px
+    classDef domain fill:#f6ffed,stroke:#52c41a,stroke-width:1px
+    classDef api fill:#fff2e8,stroke:#fa8c16,stroke-width:1px
+    classDef error fill:#fff1f0,stroke:#f5222d,stroke-width:1px
+    
+    class UI ui
+    class APP app
+    class DOMAIN domain
+    class API,LLM,NOTE api
+    class ERROR error
+```
+
+### 8.7 LLMによる変換処理の詳細
+
+LLM（大規模言語モデル）を使用した変換処理は本システムの中核機能です。この処理では、調査資料から高品質なnote記事を生成するために以下のようなプロセスを実行します：
+
+#### 8.7.1 変換のプロセス詳細
+
+```mermaid
+sequenceDiagram
+    participant User as ユーザー
+    participant Conv as note_converter.py
+    participant MD as markdown_utils.py
+    participant LLM as openrouter_client.py
+    participant Note as note_api_client.py
+    
+    User->>Conv: 変換処理開始
+    Conv->>MD: マークダウン解析
+    MD-->>Conv: 構造化データ
+    Conv->>Conv: プロンプト生成
+    Conv->>LLM: APIリクエスト
+    LLM->>LLM: モデル選択
+    LLM->>LLM: リクエスト最適化
+    LLM-->>Conv: 変換結果
+    Conv->>MD: マークダウン整形
+    MD-->>Conv: 最適化済みマークダウン
+    Conv->>Note: 下書き投稿
+    Note-->>Conv: 投稿結果
+    Conv-->>User: 処理完了通知
+```
+
+#### 8.7.2 LLM処理前後のマークダウン処理の意義
+
+マークダウン処理をLLM前後に分離することには、以下のような重要な意義があります：
+
+1. **処理の責任分離**
+   - 入力解析と出力整形を分離し、各処理の責任を明確化
+   - LLMには内容変換という中核タスクに集中させる
+
+2. **トークン消費の最適化**
+   - 不要な情報をフィルタリングしてLLMへの入力を最適化
+   - APIコストの削減
+
+3. **出力品質の安定化**
+   - LLM出力の形式揺れを後処理で標準化
+   - 一貫した品質の確保
+
+4. **カスタマイズ性の向上**
+   - 様々な出力形式に対応可能
+   - LLMモデル非依存の変換ルール適用
+
+5. **エラーハンドリングの精緻化**
+   - 処理段階ごとの詳細なエラー検出と対応
+   - 部分的な再処理が可能
+
+### 8.8 今後の実装計画
 
 1. **OpenRouter API連携**
    - LLMプロンプト生成機能
