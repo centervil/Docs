@@ -23,4 +23,4 @@ elif [ "$1" = "run" ]; then
 else
     # デフォルトでは対話的なシェルを提供
     exec "$@"
-fi 
+fi
