@@ -69,9 +69,43 @@ class NoteClient:
             response = self.session.get(login_url, proxies=self.proxies if self.proxies else None)
             response.raise_for_status()
             
-            # CSRFトークンを取得
+            # レスポンスの確認
+            logger.info(f"Login page response status: {response.status_code}")
+            logger.info(f"Response headers: {dict(response.headers)}")
+            
+            # HTMLの内容をログに出力（セキュリティ考慮で一部のみ）
+            html_snippet = response.text[:1000] if len(response.text) > 1000 else response.text
+            logger.debug(f"HTML content snippet: {html_snippet}")
+            
+            # CSRFトークンを取得（複数の方法を試す）
             soup = BeautifulSoup(response.text, "html.parser")
-            csrf_token = soup.find("meta", {"name": "csrf-token"})["content"]
+            
+            # 方法1: meta[name="csrf-token"]
+            csrf_meta = soup.find("meta", {"name": "csrf-token"})
+            
+            # 方法2: input[name="_csrf_token"]
+            if not csrf_meta:
+                csrf_input = soup.find("input", {"name": "_csrf_token"})
+                if csrf_input:
+                    csrf_token = csrf_input.get("value")
+                    logger.info("CSRF token found in input field")
+                else:
+                    # 方法3: Javascriptから抽出
+                    csrf_scripts = soup.find_all("script")
+                    for script in csrf_scripts:
+                        if script.string and "csrf" in script.string.lower():
+                            import re
+                            csrf_match = re.search(r"csrf[\"']?\s*:\s*[\"']([^\"']+)[\"']", script.string)
+                            if csrf_match:
+                                csrf_token = csrf_match.group(1)
+                                logger.info("CSRF token found in script tag")
+                                break
+                    else:
+                        logger.error("CSRF token not found in any location")
+                        return False
+            else:
+                csrf_token = csrf_meta["content"]
+                logger.info("CSRF token found in meta tag")
             
             # ログイン情報を送信
             login_api_url = "https://note.com/api/v1/login"
@@ -361,5 +395,8 @@ class NoteClient:
             logger.info(f"Note.com API connection test result: {'Success' if login_success else 'Failed'}")
             return login_success
         except Exception as e:
+            import traceback
             logger.error(f"Note.com API connection test failed: {str(e)}")
+            logger.error(f"Error details: {type(e).__name__}")
+            logger.error(f"Stack trace: {traceback.format_exc()}")
             return False 
