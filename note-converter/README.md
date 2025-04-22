@@ -42,6 +42,21 @@ cp .env.example .env
 docker-compose build
 ```
 
+### note.com認証設定
+
+note.comへの投稿には認証が必要です。以下の認証方法がサポートされています：
+
+#### 1. Cookie認証（推奨）
+
+1. ブラウザでnote.comにログインします
+2. 開発者ツール（F12）を開き、「Application」タブ → 「Cookies」 → 「https://note.com」を選択
+3. 以下の値をコピーして`.env`ファイルに設定します：
+   - `note_gql_auth_token` → `NOTE_AUTH_TOKEN=値`
+   - `_note_session_v5` → `NOTE_SESSION_V5=値`
+
+
+**注意**: Cookieの有効期限は限られているため、一定期間後に再取得が必要になります。
+
 ## 使用方法
 
 ### ローカル開発
@@ -58,6 +73,10 @@ docker-compose run --rm test
 
 # 特定のテスト
 docker-compose run --rm test pytest tests/unit/test_note_converter.py
+
+# note.comのAPI接続テスト（実際のAPIを使用）
+# .envファイルでTEST_USE_REAL_API=trueに設定した上で実行
+docker-compose run --rm test pytest tests/integration/test_note_api_posting.py -v
 ```
 
 3. スクリプトの実行
@@ -81,14 +100,18 @@ Docs/
 └── note-converter/           # 変換・投稿システム
     ├── scripts/              # 変換・投稿スクリプト
     │   ├── note_converter.py      # メインスクリプト
-    │   ├── note_api_client.py     # note.com APIクライアント
-    │   ├── openrouter_client.py   # OpenRouter APIクライアント
+    │   ├── clients/               # APIクライアント
+    │   │   ├── note_client.py     # note.com APIクライアント
+    │   │   └── openrouter_client.py # OpenRouter APIクライアント
+    │   ├── config.py              # 設定管理
     │   └── utils/                 # ユーティリティ
     │       ├── markdown_utils.py  # Markdown処理
     │       └── error_handler.py   # エラーハンドリング
     ├── tests/                 # テストコード
     │   ├── unit/              # ユニットテスト
     │   └── integration/       # 統合テスト
+    │       ├── test_note_api_posting.py # note.comのAPI連携テスト
+    │       └── test_real_api_integration.py # 実APIテスト
     ├── docker/               # Docker関連ファイル
     │   ├── Dockerfile        # 開発・テスト用Dockerfile
     │   ├── docker-compose.yml # ローカル開発環境用
@@ -144,6 +167,8 @@ Docs/
 2. **認証エラー**
    - 環境変数の設定を確認
    - セッションの有効期限を確認
+   - Cookie認証の場合、Cookieの有効期限が切れていないか確認（再取得が必要な場合あり）
+   - CSRFトークン取得の問題が発生する場合は、Cookie認証に切り替えることで解決できる可能性があります
 
 3. **テスト失敗**
    - テスト環境の設定を確認

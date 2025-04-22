@@ -22,11 +22,15 @@ class NoteClient:
 
         Args:
             config: APIの設定情報
-                - email: note.comのログインメールアドレス
-                - password: note.comのログインパスワード
+                - auth_token: note.comのauth_token (Cookie: note_gql_auth_token)
+                - session_v5: note.comのセッション (Cookie: _note_session_v5)
                 - http_proxy: HTTPプロキシ (任意)
                 - https_proxy: HTTPSプロキシ (任意)
         """
+        self.auth_token = config.get("auth_token")
+        self.session_v5 = config.get("session_v5")
+        
+        # 旧認証情報（後方互換のため）
         self.email = config.get("email")
         self.password = config.get("password")
         
@@ -40,27 +44,54 @@ class NoteClient:
         # セッション作成
         self.session = requests.Session()
         self.session.headers.update({
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+            "Accept": "application/json",
+            "Content-Type": "application/json"
         })
         
-        # ログイン状態
-        self.is_logged_in = False
+        # Cookie認証がある場合はセットアップ
+        if self.auth_token and self.session_v5:
+            self.setup_cookie_auth()
+            self.is_logged_in = True
+        else:
+            self.is_logged_in = False
         
         logger.info("NoteClient initialized")
+    
+    def setup_cookie_auth(self):
+        """
+        Cookie認証の設定
+        """
+        # Cookieを設定
+        self.session.cookies.set("note_gql_auth_token", self.auth_token, domain="note.com")
+        self.session.cookies.set("_note_session_v5", self.session_v5, domain="note.com")
+        logger.info("Cookie authentication setup completed")
     
     def login(self) -> bool:
         """
         note.comにログインする
 
+        Cookie認証情報がある場合はそれを使用
+        ない場合は従来のメール/パスワード認証を試行
+        
         Returns:
             ログイン成功の場合はTrue、失敗の場合はFalse
         """
+        # すでにCookie認証済み
         if self.is_logged_in:
-            logger.info("Already logged in to note.com")
+            logger.info("Already authenticated with cookies")
             return True
             
+        # Cookie認証情報がある場合
+        if self.auth_token and self.session_v5:
+            self.setup_cookie_auth()
+            self.is_logged_in = True
+            logger.info("Logged in with cookie authentication")
+            return True
+            
+        # 以下は従来のログイン方法（後方互換のため維持）
         if not self.email or not self.password:
-            logger.error("Email or password not provided for note.com login")
+            logger.error("Neither cookie authentication nor email/password provided")
             return False
             
         try:
@@ -69,43 +100,15 @@ class NoteClient:
             response = self.session.get(login_url, proxies=self.proxies if self.proxies else None)
             response.raise_for_status()
             
-            # レスポンスの確認
-            logger.info(f"Login page response status: {response.status_code}")
-            logger.info(f"Response headers: {dict(response.headers)}")
-            
-            # HTMLの内容をログに出力（セキュリティ考慮で一部のみ）
-            html_snippet = response.text[:1000] if len(response.text) > 1000 else response.text
-            logger.debug(f"HTML content snippet: {html_snippet}")
-            
-            # CSRFトークンを取得（複数の方法を試す）
+            # CSRFトークンを取得
             soup = BeautifulSoup(response.text, "html.parser")
-            
-            # 方法1: meta[name="csrf-token"]
             csrf_meta = soup.find("meta", {"name": "csrf-token"})
             
-            # 方法2: input[name="_csrf_token"]
             if not csrf_meta:
-                csrf_input = soup.find("input", {"name": "_csrf_token"})
-                if csrf_input:
-                    csrf_token = csrf_input.get("value")
-                    logger.info("CSRF token found in input field")
-                else:
-                    # 方法3: Javascriptから抽出
-                    csrf_scripts = soup.find_all("script")
-                    for script in csrf_scripts:
-                        if script.string and "csrf" in script.string.lower():
-                            import re
-                            csrf_match = re.search(r"csrf[\"']?\s*:\s*[\"']([^\"']+)[\"']", script.string)
-                            if csrf_match:
-                                csrf_token = csrf_match.group(1)
-                                logger.info("CSRF token found in script tag")
-                                break
-                    else:
-                        logger.error("CSRF token not found in any location")
-                        return False
-            else:
-                csrf_token = csrf_meta["content"]
-                logger.info("CSRF token found in meta tag")
+                logger.error("CSRF token not found in login page")
+                return False
+                
+            csrf_token = csrf_meta["content"]
             
             # ログイン情報を送信
             login_api_url = "https://note.com/api/v1/login"
@@ -114,9 +117,7 @@ class NoteClient:
                 "password": self.password
             }
             headers = {
-                "X-CSRF-Token": csrf_token,
-                "Content-Type": "application/json",
-                "Accept": "application/json"
+                "X-CSRF-Token": csrf_token
             }
             
             login_response = self.session.post(
@@ -131,7 +132,14 @@ class NoteClient:
             result = login_response.json()
             if result.get("is_success", False):
                 self.is_logged_in = True
-                logger.info("Successfully logged in to note.com")
+                logger.info("Successfully logged in to note.com with email/password")
+                
+                # Cookie情報を取得
+                cookies = self.session.cookies
+                self.auth_token = cookies.get("note_gql_auth_token")
+                self.session_v5 = cookies.get("_note_session_v5")
+                
+                logger.info("Retrieved authentication cookies from login")
                 return True
             else:
                 logger.error(f"Failed to login to note.com: {json.dumps(result, ensure_ascii=False)}")
@@ -261,14 +269,16 @@ class NoteClient:
             response.raise_for_status()
             
             soup = BeautifulSoup(response.text, "html.parser")
-            csrf_token = soup.find("meta", {"name": "csrf-token"})["content"]
+            csrf_token = soup.find("meta", {"name": "csrf-token"})
             
+            if not csrf_token:
+                logger.error("CSRF token not found for note creation")
+                return None
+                
             # 記事作成APIを呼び出す
             create_url = "https://note.com/api/v1/notes"
             headers = {
-                "X-CSRF-Token": csrf_token,
-                "Content-Type": "application/json",
-                "Accept": "application/json"
+                "X-CSRF-Token": csrf_token["content"]
             }
             
             data = {
@@ -335,14 +345,16 @@ class NoteClient:
             response.raise_for_status()
             
             soup = BeautifulSoup(response.text, "html.parser")
-            csrf_token = soup.find("meta", {"name": "csrf-token"})["content"]
+            csrf_token = soup.find("meta", {"name": "csrf-token"})
             
+            if not csrf_token:
+                logger.error("CSRF token not found for note update")
+                return False
+                
             # 更新APIを呼び出す
             update_url = f"https://note.com/api/v1/notes/{note_id}"
             headers = {
-                "X-CSRF-Token": csrf_token,
-                "Content-Type": "application/json",
-                "Accept": "application/json"
+                "X-CSRF-Token": csrf_token["content"]
             }
             
             # 更新するデータ（現在の設定を維持するために現在の記事情報をマージ）
@@ -390,10 +402,32 @@ class NoteClient:
             接続成功の場合はTrue、失敗の場合はFalse
         """
         try:
-            # ログインを試行
-            login_success = self.login()
-            logger.info(f"Note.com API connection test result: {'Success' if login_success else 'Failed'}")
-            return login_success
+            # まずCookie認証をチェック
+            if self.auth_token and self.session_v5:
+                self.setup_cookie_auth()
+                
+                # 簡易的な接続テスト（トップページにアクセス）
+                response = self.session.get("https://note.com/", proxies=self.proxies if self.proxies else None)
+                response.raise_for_status()
+                
+                # ログイン状態を確認（ログイン済みならマイページへのリンクがある）
+                soup = BeautifulSoup(response.text, "html.parser")
+                profile_link = soup.find("a", href=lambda href: href and "/mypage" in href)
+                
+                if profile_link:
+                    logger.info("Note.com API connection test successful with cookie authentication")
+                    self.is_logged_in = True
+                    return True
+            
+            # Cookie認証に失敗したらメール/パスワード認証を試行
+            if self.email and self.password:
+                login_success = self.login()
+                logger.info(f"Note.com API connection test with email/password: {'Success' if login_success else 'Failed'}")
+                return login_success
+            
+            logger.error("Note.com API connection test failed: No valid authentication method")
+            return False
+            
         except Exception as e:
             import traceback
             logger.error(f"Note.com API connection test failed: {str(e)}")
