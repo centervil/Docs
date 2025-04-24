@@ -10,6 +10,7 @@ import sys
 import argparse
 import logging
 from pathlib import Path
+from datetime import datetime
 
 # ロギング設定
 logging.basicConfig(
@@ -111,10 +112,12 @@ def generate_output_file(processed_content, input_filename, output_dir):
     # 出力ディレクトリが存在しない場合は作成
     os.makedirs(output_dir, exist_ok=True)
     
-    # 入力ファイル名から出力ファイル名を生成
+    # 入力ファイル名から出力ファイル名を生成（YYYYMMDD_title.md 形式）
     base_name = os.path.basename(input_filename)
     name_without_ext = os.path.splitext(base_name)[0]
-    output_filename = f"processed_{name_without_ext}.md"
+    # 日付部分を取得（なければ今日の日付）
+    today = datetime.now().strftime('%Y%m%d')
+    output_filename = f"{today}_{name_without_ext}.md"
     output_path = os.path.join(output_dir, output_filename)
     
     logger.info(f"処理結果を出力中: {output_path}")
@@ -151,8 +154,9 @@ def main():
         # マークダウン処理
         processed_content = process_markdown(markdown_content, format_instructions)
         
-        # 出力ファイル生成
-        output_path = generate_output_file(processed_content, args.input_file, args.output_dir)
+        # 出力ファイル生成（保存先を note-articles/ に変更）
+        output_dir = "note-articles"
+        output_path = generate_output_file(processed_content, args.input_file, output_dir)
         
         logger.info(f"処理が完了しました。出力ファイル: {output_path}")
         
