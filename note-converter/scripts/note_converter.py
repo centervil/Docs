@@ -23,14 +23,44 @@ logger = logging.getLogger(__name__)
 ROOT_DIR = Path(__file__).parent.parent.absolute()
 sys.path.append(str(ROOT_DIR))
 
-# LLMを使った処理関数（これはモックで、実際には別モジュールで実装される想定）
+# OpenRouterクライアントをインポート
+from scripts.openrouter_client import OpenRouterClient, OpenRouterAPIError
+
+# LLMを使った処理関数
 def process_with_llm(markdown_content, format_instructions):
     """LLMを使用してマークダウンコンテンツを処理する"""
-    # 実際の実装では、OpenRouterクライアントを使ってLLM APIを呼び出す
-    # この関数は現在はモック実装
     logger.info("LLM APIを使用してマークダウンを処理します")
-    # 現段階ではモック値を返す
-    return f"LLMで処理されたコンテンツ:\n\n{markdown_content}"
+    
+    # 環境変数からAPIキーを取得
+    api_key = os.environ.get("OPENROUTER_API_KEY")
+    if not api_key:
+        logger.warning("OPENROUTER_API_KEYが設定されていません。モック応答を返します。")
+        return f"LLMで処理されたコンテンツ:\n\n{markdown_content}"
+    
+    try:
+        # OpenRouterクライアントを初期化
+        client = OpenRouterClient(
+            api_key=api_key,
+            model="anthropic/claude-3.5-sonnet",
+            max_tokens=4096,
+            temperature=0.7
+        )
+        
+        # プロンプトをフォーマットして生成リクエスト
+        prompt = client.format_prompt(markdown_content, format_instructions)
+        response = client.generate_text(prompt)
+        
+        logger.info("LLM処理が完了しました")
+        return response
+        
+    except OpenRouterAPIError as e:
+        logger.error(f"LLM API呼び出しエラー: {str(e)}")
+        # エラー時はモック応答を返す
+        return f"APIエラーが発生しました。元のコンテンツ:\n\n{markdown_content}"
+    except Exception as e:
+        logger.error(f"予期せぬエラー: {str(e)}")
+        # エラー時はモック応答を返す
+        return f"エラーが発生しました。元のコンテンツ:\n\n{markdown_content}"
 
 def parse_args():
     """コマンドライン引数をパースする"""
