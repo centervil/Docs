@@ -1,5 +1,3 @@
-<img src="https://r2cdn.perplexity.ai/pplx-full-logo-primary-dark%402x.png" class="logo" width="120"/>
-
 ## Markdownから編集可能なPowerPoint（PPTX）を作成する方法
 
 Marpを使ってMarkdownからスライドを作成する際、「PPTXファイルにすると文字が編集できない」「PowerPointのテンプレートが使えない」といった課題はよく指摘されます。Marpの標準PPTX出力はスライドを画像として埋め込むため、PowerPoint上での編集性やテンプレート利用に制限があります[^1_2][^1_3]。
