@@ -1,5 +1,3 @@
-<img src="https://r2cdn.perplexity.ai/pplx-full-logo-primary-dark%402x.png" class="logo" width="120"/>
-
 ## CursorのMCP機能がWSL2接続でうまく使えない事例と解決策
 
 Windows版CursorでWSL2上のUbuntu環境にRemote接続し、MCP（Model Context Protocol）機能が正常に動作しない、特に「Client closed」エラーなどでMCPサーバーが起動しない事例は多数報告されています[^1_1][^1_2][^1_4][^1_5][^1_6][^1_7]。
