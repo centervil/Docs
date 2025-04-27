@@ -6,6 +6,7 @@ on:
       - 'research/**/*.md'
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   convert-research-to-note:
@@ -32,10 +33,19 @@ jobs:
       - name: 変更された研究ファイルを特定
         id: changed-files
         run: |
-          # mainブランチと比較して変更されたファイルを検出
-          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD | grep '^research/.*\.md$' || echo "")
-          echo "変更されたファイル: $CHANGED_FILES"
-          echo "files=$CHANGED_FILES" >> $GITHUB_OUTPUT
+          # 削除されたファイルを除外して変更されたファイルのみを検出
+          CHANGED_FILES=$(git diff --name-only --diff-filter=d HEAD^ HEAD | grep '^research/.*\.md$' || echo "")
+          
+          # 一行ずつ表示
+          echo "変更されたファイル:"
+          echo "$CHANGED_FILES" | tr ' ' '\n'
+          
+          # 出力を適切な形式で設定
+          {
+            echo "files<<EOF"
+            echo "$CHANGED_FILES"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
       
       - name: 研究ファイルを変換
         if: steps.changed-files.outputs.files != ''
