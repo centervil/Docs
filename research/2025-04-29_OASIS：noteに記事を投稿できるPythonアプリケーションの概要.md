@@ -1,5 +1,3 @@
-<img src="https://r2cdn.perplexity.ai/pplx-full-logo-primary-dark%402x.png" class="logo" width="120"/>
-
 ## OASIS：noteに記事を投稿できるPythonアプリケーションの概要
 
 OASIS（Optimized Article Sorting Intelligent System）は、Markdownファイルからnoteをはじめとする複数のプラットフォーム（WordPress、Qiita、Zennなど）へ記事投稿を自動化できるPython製のアプリケーションです[^1_1][^1_2][^1_4]。
@@ -19,10 +17,10 @@ OASIS（Optimized Article Sorting Intelligent System）は、Markdownファイ�
 
 1. Python（3.7以上推奨）をインストール
 2. 以下のコマンドでOASIS本体をインストール
+
 ```
 pip install -U oasis-article
 ```
-
 
 ---
 
@@ -40,7 +38,6 @@ oasis /path/to/your/folder --qiita --note --wp --zenn
 
 **主なコマンドオプション**
 
-
 | オプション | 内容 |
 | :-- | :-- |
 | --qiita | Qiitaに投稿 |
@@ -49,12 +46,12 @@ oasis /path/to/your/folder --qiita --note --wp --zenn
 | --zenn | Zennに投稿 |
 | --firefox-headless | ブラウザのヘッドレス実行 |
 
-
 ---
 
 **Web UIからの投稿（v0.8.0～）**
 
 1. Web UIを起動
+
 ```
 oasis -app
 ```
@@ -91,39 +88,24 @@ OASISは、noteを含む複数プラットフォームへの記事投稿を効�
 
 <div style="text-align: center">⁂</div>
 
-[^1_1]: https://pypi.org/project/oasis-article/
+[^1_1]: <https://pypi.org/project/oasis-article/>
 
-[^1_2]: https://hamaruki.com/markdown-to-wordpress-qiita-note-zenn-quick-crosspost-oasis-v0-7-0-usage/
+[^1_2]: <https://hamaruki.com/markdown-to-wordpress-qiita-note-zenn-quick-crosspost-oasis-v0-7-0-usage/>
 
-[^1_3]: https://note.com/naokun_gadget/n/naf129cb5f34b
+[^1_3]: <https://note.com/naokun_gadget/n/naf129cb5f34b>
 
-[^1_4]: https://qiita.com/Maki-HamarukiLab/items/6aeb22c4ab60134986ac
+[^1_4]: <https://qiita.com/Maki-HamarukiLab/items/6aeb22c4ab60134986ac>
 
-[^1_5]: https://note.com/m316jp2/n/na3cedb64d80a
 
-[^1_6]: https://zenn.dev/sunwood_ai_labs/articles/markdown-to-wordpress-qiita-note-zenn-quick-cros
 
-[^1_7]: https://note.com/sunwood_ai_labs/n/n0ee3dab6488b
 
-[^1_8]: https://x.com/hAru_mAki_ch/status/1809262904275054835
 
-[^1_9]: https://b.hatena.ne.jp/entry/s/zenn.dev/sunwood_ai_labs/articles/markdown-to-wordpress-qiita-note-zenn-quick-cros
 
-[^1_10]: https://note.com/navitime_tech/n/na8231e5104d9
 
-[^1_11]: https://hamaruki.com/category/python/
 
-[^1_12]: https://hamaruki.com/category/blogging/
 
-[^1_13]: https://pypi.org/project/oasis-article/0.5.2/
 
-[^1_14]: https://learn.microsoft.com/ja-jp/python/api/azure-core/azure.core.exceptions.odatav4error?view=azure-python
 
-[^1_15]: https://hamaruki.com/category/cross-posting/
 
-[^1_16]: https://qiita.com/icoxfog417/items/4f596bde78380cd0950d
 
-[^1_17]: https://twitter.com/hAru_mAki_ch/status/1809430548533891402
-
-[^1_18]: https://zenn.dev/sunwood_ai_labs
 
