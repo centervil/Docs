@@ -1,44 +1,48 @@
-# 品質管理ダッシュボードガイド
+# 品質管理ダッシュボードガイド (AIエージェント開発向け: PM主導)
 
-このガイドでは、Pythonプロジェクト向けの包括的な品質管理ダッシュボードの構築と運用方法について説明します。品質指標の可視化を通じて、開発プロセスの透明性を高め、継続的な改善を促進することを目的としています。
+このガイドでは、人間がPMとしてAIコーディングエージェント (Cursor, Cline, MCPなど) に指示を出す開発体制において、品質管理ダッシュボードを構築・運用する方法を説明します。ダッシュボードはPMがAIエージェントの活動と成果物の品質を客観的に評価し、適切な指示やフィードバックを与えるための重要なツールとなります。
 
-## 1. ダッシュボードの目的と価値
+## 1. ダッシュボードの目的と価値 (PMによるAIエージェント管理)
 
 ### 1.1 品質管理ダッシュボードの目的
 
-- **透明性の確保**: プロジェクトの健全性と問題点を可視化
-- **早期問題検出**: 開発初期段階での問題の特定と対応
-- **チーム意識の向上**: 品質指標の共有によるチーム全体の品質意識向上
-- **継続的改善**: トレンド分析による改善効果の確認
-- **客観的な判断基準**: 感覚ではなくデータに基づく意思決定
+- **透明性の確保**: プロジェクト全体の健全性、コード品質、AIエージェントの活動状況と成果をPMが把握可能にする。
+- **早期問題検出**: AIエージェントの作業に起因する品質低下や問題をPMが早期に発見し、対応指示を出す。
+- **AIエージェントへのフィードバック**: PMが客観的なデータ（品質指標）に基づき、AIエージェントへ具体的な改善指示（テスト追加、リファクタリング等）を行う。
+- **継続的改善**: PMがダッシュボードを通じて開発プロセス（人間とAIの連携含む）全体の改善効果を確認し、次のアクションを決定する。
+- **客観的な判断基準**: PMがデータに基づきAIエージェントのパフォーマンス（生産性、品質）を評価し、タスク割り当てや指示方法を最適化する。
 
-### 1.2 主要な品質指標
+### 1.2 主要な品質指標 (PMによる評価のため)
+
+PMがAIエージェントの作業品質を評価するために、以下の指標に注目します。
 
 #### コード品質指標
-- コードカバレッジ率（全体・コンポーネント別）
-- 静的解析の警告数・エラー数
-- コード複雑度メトリクス
-- 技術的負債の定量評価
+- コードカバレッジ率（目標達成度、AIによる増減）
+- 静的解析の警告・エラー数（AIによる増減、深刻度）
+- コード複雑度メトリクス（AIによる過度な複雑化の有無）
+- 技術的負債（AIによる新規発生・解消状況）
 
-#### プロセス品質指標
-- ビルド成功率
-- テスト実行時間
-- Issue・PR解決速度
-- レビュー率・フィードバック対応率
+#### プロセス品質指標 (Human-In-The-Loop 関連)
+- ビルド成功率（AIコミット起因の失敗頻度）
+- テスト実行時間（AIによる影響）
+- AIエージェントによるチケット解決速度
+- **PMによるレビュー時間・頻度**（AI生成コードに対するボトルネック特定）
+- **PMからAIへの修正指示回数・内容**（AIの理解度、指示の明確さの指標）
 
 #### 成果品質指標
-- バグ発生率・解決率
-- 機能完了率
-- パフォーマンス指標
-- セキュリティ脆弱性数
+- バグ発生率・解決率（AI生成コード起因のバグ特定）
+- 機能完了率（計画通りに進捗しているか）
+- パフォーマンス指標（AIによるリグレッション有無）
+- セキュリティ脆弱性数（AI生成コードのスキャン結果）
 
 ## 2. ダッシュボード構築ガイド
 
 ### 2.1 基本アーキテクチャ
 
 ```
-[CI/CDパイプライン] → [データ収集スクリプト] → [データストレージ] → [可視化ツール]
+[CI/CDパイプライン (GitHub Actions)] → [データ収集スクリプト] → [データストレージ (DB/ファイル)] → [可視化ツール (Grafana/静的HTML)]
 ```
+AIエージェントの活動ログ (開発日記など) もデータソースとして検討可能です。
 
 #### 実装オプション
 
@@ -134,37 +138,35 @@ def extract_pylint_data(json_path='pylint-report.json'):
     }
 ```
 
-#### プロセスメトリクスデータ
+#### プロセスメトリクスデータ (AIエージェント関連)
 
-GitHub APIを活用したデータ収集:
+GitHub APIに加え、開発日記 (`Docs/dev-records/`) のログを解析することで、AIエージェント関連の指標を収集することも可能です。
 
-```python
-import requests
-
-def fetch_github_metrics(repo, token):
-    headers = {
-        'Authorization': f'token {token}',
-        'Accept': 'application/vnd.github.v3+json'
-    }
-    
-    # PRデータ取得
-    pr_url = f'https://api.github.com/repos/{repo}/pulls?state=all'
-    pr_response = requests.get(pr_url, headers=headers)
-    pr_data = pr_response.json()
-    
-    # Issue データ取得
-    issues_url = f'https://api.github.com/repos/{repo}/issues?state=all'
-    issues_response = requests.get(issues_url, headers=headers)
-    issues_data = issues_response.json()
-    
-    # データ解析・集計処理
-    # ...
-    
-    return {
-        'pr_metrics': pr_metrics,
-        'issue_metrics': issue_metrics
-    }
-```
+- **開発日記ログ解析スクリプト例 (概念)**:
+  ```python
+  import re
+  from pathlib import Path
+  
+  def analyze_dev_logs(log_dir="Docs/dev-records/"):
+      agent_metrics = {
+          'total_interactions': 0,
+          'agent_commits': 0, # Git連携が必要
+          'correction_requests': 0,
+          # 他の指標...
+      }
+      log_files = Path(log_dir).glob("*.md")
+      
+      for log_file in log_files:
+          with open(log_file, 'r', encoding='utf-8') as f:
+              content = f.read()
+              # 正規表現などでログから情報を抽出
+              agent_metrics['total_interactions'] += len(re.findall(r"^- LLM:", content, re.MULTILINE))
+              # 例: 修正依頼を示す特定のキーワードをカウント
+              agent_metrics['correction_requests'] += len(re.findall(r"ユーザー:.*(修正|変更|やり直し)してください", content))
+              # Git連携でコミット数をカウントする処理を追加...
+              
+      return agent_metrics
+  ```
 
 ### 2.3 データ保存と履歴管理
 
@@ -364,14 +366,16 @@ document.addEventListener('DOMContentLoaded', async () => {
    - コンポーネントパネル: モジュール/コンポーネント別の詳細
    - アラートパネル: 閾値を下回った指標の警告表示
 
-3. **アラート設定**:
-   - カバレッジが80%を下回った場合に通知
-   - 静的解析エラーが10件を超えた場合に通知
-   - ビルド失敗が2回連続した場合に通知
+3. **アラート設定**: 
+   - AI生成コードのカバレッジが特定の閾値を下回った場合に通知
+   - AI生成コードに対する静的解析エラーが急増した場合に通知
+   - AIエージェントによるビルド失敗が連続した場合に通知
 
 ## 3. CI/CDパイプラインとの統合
 
 ### 3.1 GitHub Actions統合
+
+CI/CDパイプラインは、AIエージェントが生成したコードの品質を自動チェックする上で極めて重要です。
 
 ```yaml
 # .github/workflows/quality-dashboard.yml
@@ -407,12 +411,11 @@ jobs:
           flake8 src/ --output-file=flake8-report.txt
           mypy src/ --txt-report mypy-report
           
-      - name: Collect GitHub metrics
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python scripts/collect_github_metrics.py
+      - name: Collect AI Agent Metrics (Optional)
+        # 開発日記ログなどを解析して指標を収集するスクリプトを実行
+        run: python scripts/collect_agent_metrics.py
         
-      - name: Process quality data
+      - name: Process quality data (including agent metrics)
         run: python scripts/process_quality_data.py
         
       - name: Generate dashboard
@@ -500,104 +503,29 @@ pipeline {
 }
 ```
 
-## 4. データ解析と意思決定
+## 4. データ解析と意思決定 (PM主導 & Human-In-The-Loop)
 
-### 4.1 主要な分析視点
+### 4.1 主要な分析視点 (PM向け)
 
-- **トレンド分析**: 時間経過に伴う品質指標の変化
-- **コンポーネント分析**: モジュール/ファイルごとの品質差異
-- **相関分析**: 異なる指標間の相関関係
-- **異常検出**: 通常パターンからの逸脱の特定
+PMはダッシュボードから以下の視点でデータを分析し、アクションに繋げます。
 
-### 4.2 意思決定フレームワーク
+- **トレンド分析**: AIエージェントの導入・活用方針変更後の品質変化を評価。
+- **コンポーネント分析**: AIエージェントが品質を維持しやすい/低下させやすいコード領域を特定。
+- **相関分析**: AIへの指示内容や頻度と、コード品質・生産性の関係性を分析。
+- **異常検出**: AIによる予期せぬ品質劣化やビルド失敗を早期に発見。
 
-1. **閾値ベースの判断**:
-   - カバレッジ: 80%以上を維持
-   - 静的解析: 重大な警告0件
-   - ビルド成功率: 95%以上
+### 4.2 意思決定フレームワーク (PMによるAIへの指示改善)
 
-2. **トレンドベースの判断**:
-   - 3日連続でカバレッジ低下: 調査実施
-   - 静的解析警告の継続的増加: リファクタリング検討
-   - ビルド時間の増加傾向: パフォーマンス最適化
+PMはダッシュボードのデータを基に、AIエージェントへの指示内容や連携方法を改善します。
 
-3. **品質ゲート**:
-   - PRマージ条件: カバレッジ低下なし、静的解析エラーなし
-   - リリース条件: 全テスト通過、カバレッジ目標達成、セキュリティスキャンパス
+1.  **閾値ベースの判断**: 品質指標が設定した閾値を逸脱した場合、PMは原因を調査し、AIエージェントに具体的な改善タスク（テスト追加、リファクタリング、規約遵守など）を指示します。
+    *   例: AI生成コードのカバレッジが80%未満 → 「カバレッジレポートを確認し、`module_x.py` の未テスト行に対するテストを追加してください」
+2.  **トレンドベースの判断**: 品質指標の悪化傾向が見られる場合、PMはAIへの指示方法やプロンプト、利用するツール（MCPサーバー等）の見直しを検討します。
+    *   例: PMからの修正指示回数が増加傾向 → 指示の具体性を高める、参考情報を追加する、タスクをより小さく分割する。
+    *   例: 特定領域でAIによるバグ発生が多い → その領域はAIに任せずPMが担当する、またはより詳細な仕様とテストケースを指示する。
+3.  **品質ゲート**: PMはPRマージの最終承認者として、ダッシュボードで示される品質基準（カバレッジ、静的解析結果など）を満たしていることを確認します。
 
-### 4.3 自動レポート生成
-
-週次品質レポートの自動生成:
-
-```python
-# scripts/generate_weekly_report.py
-import json
-import datetime
-from pathlib import Path
-import matplotlib.pyplot as plt
-
-def generate_weekly_report():
-    # 日付範囲の決定
-    today = datetime.date.today()
-    start_date = today - datetime.timedelta(days=7)
-    
-    # データ収集
-    coverage_data = []
-    for day in range(7):
-        date = start_date + datetime.timedelta(days=day)
-        date_str = date.strftime('%Y-%m-%d')
-        data_path = Path(f'reports/coverage/{date_str}.json')
-        
-        if data_path.exists():
-            with open(data_path, 'r') as f:
-                coverage_data.append(json.load(f))
-    
-    # グラフ生成
-    dates = [d['timestamp'][:10] for d in coverage_data]
-    values = [d['coverage']['total'] for d in coverage_data]
-    
-    plt.figure(figsize=(10, 6))
-    plt.plot(dates, values, marker='o')
-    plt.title('週間コードカバレッジ推移')
-    plt.xlabel('日付')
-    plt.ylabel('カバレッジ率 (%)')
-    plt.grid(True)
-    plt.savefig('reports/weekly/coverage_trend.png')
-    
-    # HTML レポート生成
-    html = f"""
-    <html>
-    <head><title>週間品質レポート</title></head>
-    <body>
-        <h1>週間品質レポート ({start_date} ～ {today})</h1>
-        
-        <h2>カバレッジ推移</h2>
-        <img src="coverage_trend.png" alt="カバレッジ推移">
-        
-        <h2>主要指標サマリー</h2>
-        <table border="1">
-            <tr><th>指標</th><th>現在値</th><th>先週比</th><th>状態</th></tr>
-            <tr>
-                <td>コードカバレッジ</td>
-                <td>{values[-1]}%</td>
-                <td>{values[-1] - values[0]:.1f}%</td>
-                <td>{'🟢' if values[-1] >= 80 else '🔴'}</td>
-            </tr>
-            <!-- その他の指標 -->
-        </table>
-    </body>
-    </html>
-    """
-    
-    Path('reports/weekly').mkdir(exist_ok=True, parents=True)
-    with open('reports/weekly/index.html', 'w') as f:
-        f.write(html)
-
-if __name__ == '__main__':
-    generate_weekly_report()
-```
-
-## 5. 実装例とベストプラクティス
+## 5. 実装例とベストプラクティス (PM主導のAIエージェント開発)
 
 ### 5.1 小規模プロジェクト向け最小構成
 
@@ -624,19 +552,12 @@ if __name__ == '__main__':
    - Slack/Teamsへの通知
    - 品質低下時の自動Issue作成
 
-### 5.3 ベストプラクティス
+### 5.3 ベストプラクティス (PM主導のAIエージェント開発)
 
-- **継続的な改善目標設定**:
-  - 達成可能な段階的な目標設定
-  - 品質指標の優先順位付け
-
-- **チーム文化との統合**:
-  - 朝会でのダッシュボード確認ルーチン
-  - 品質改善の取り組みを評価する文化醸成
-
-- **メンテナンス計画**:
-  - 古いデータのアーカイブ戦略
-  - ダッシュボード自体のテストと品質確保
+- **継続的な改善目標設定**: PMはAIエージェントのパフォーマンスに関する具体的な目標を設定し、ダッシュボードで進捗を追跡します。
+- **人間(PM)とAIの役割分担**: PMはダッシュボードを参考に、AIに任せるべきタスクと、PM自身が介入・判断すべきポイント（レビュー、承認、複雑な意思決定）を明確にします。
+- **AIへのフィードバックループ**: PMはダッシュボードの情報を定期的に確認し、それを基にAIエージェントへの指示プロンプト、利用ツール、開発プロセス自体を継続的に改善します。
+- **ダッシュボードの活用**: PMはダッシュボードを日々のAIエージェント管理の中心に据え、客観的なデータに基づいた意思決定を行います。
 
 ## 6. 参考リソースとツール
 
@@ -645,8 +566,10 @@ if __name__ == '__main__':
 - **テスト＆カバレッジ**: pytest, pytest-cov, coverage
 - **静的解析**: pylint, flake8, mypy, bandit
 - **可視化**: Chart.js, Grafana, Metabase
-- **CI/CD連携**: GitHub Actions, Jenkins, CircleCI
-- **データ保存**: SQLite, PostgreSQL, InfluxDB
+- **CI/CD連携**: GitHub Actions
+- **データ保存**: SQLite, PostgreSQL, InfluxDB, JSON/CSV (GitHub Pages)
+- **AIエージェント**: Cursor, Roo Code (Cline), etc.
+- **ログ解析**: Python (re, pandas), etc.
 
 ### 6.2 参考リソース
 
