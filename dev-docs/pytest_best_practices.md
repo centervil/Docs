@@ -1,6 +1,7 @@
-# Pytestベストプラクティスガイド (AIエージェント開発向け)
+# Pytestベストプラクティスガイド (AIエージェント主導開発向け)
 
-このガイドでは、Pythonプロジェクトにおいて、人間がPMとしてAIコーディングエージェント (Cursor, Cline, MCPなど) に指示を出し、AIがテストコード生成やテスト実行（CI/CD経由含む）を行う際の、Pytestの活用方法とベストプラクティスを解説します。
+このガイドでは、Pythonプロジェクトにおいて、AIコーディングエージェント (Cursor, Cline, MCPなど) が自律的にテストコード生成やテスト実行を行い、人間がPMとして重要な方向性の確認とレビューを行う開発体制における、Pytestの活用方法とベストプラクティスを解説します。
+**`devsecops_guide.md` で定義されたセキュリティテスト戦略も考慮してください。**
 
 ## 1. Pytestの基本
 
@@ -13,6 +14,8 @@ Pytestは、Pythonのテストフレームワークで、シンプルな構文�
 - フィクスチャの柔軟な管理：テスト前後の環境セットアップと後処理
 - プラグインエコシステム：拡張機能が豊富
 - 詳細なエラーレポート：テスト失敗時の情報が充実
+
+AIエージェントはこれらの特徴を活かし、最小限の指示でも効果的なテストを自律的に設計・実装できます。
 
 ### 1.2 インストールと基本設定
 
@@ -34,11 +37,13 @@ markers =
 addopts = --strict-markers
 ```
 
+AIエージェントはこの設定ファイルを参照し、プロジェクト規約に沿ったテストを自律的に生成します。
+
 ## 2. テスト構造とベストプラクティス
 
 ### 2.1 ディレクトリ構造
 
-推奨されるテストディレクトリ構造：
+AIエージェントが従うべき推奨テストディレクトリ構造：
 
 ```
 myproject/
@@ -54,16 +59,24 @@ myproject/
 │   │   └── test_utils.py
 │   ├── integration/
 │   │   └── test_end_to_end.py
+│   ├── security/            # セキュリティテスト (オプション)
+│   │   └── test_security_vulnerabilities.py # 特定の脆弱性再現テストなど
 │   └── fixtures/
 │       └── test_data.json
 └── pytest.ini
 ```
 
+AIエージェントは既存のディレクトリ構造を尊重し、新しいテストファイルを適切な場所に自律的に配置します。
+**特定の脆弱性に対するテストは `tests/security/` ディレクトリに配置することを検討してください。**
+
 ### 2.2 命名規則
+
+AIエージェントは以下の命名規則に従ってテストコードを生成します：
 
 - テストファイル：`test_<テスト対象>.py`
 - テストクラス：`Test<テスト対象>`
 - テスト関数：`test_<テストする機能>`
+- **セキュリティテスト関数**: `test_security_<脆弱性やシナリオ>` (例: `test_security_sql_injection`)
 
 例：
 ```python
@@ -82,11 +95,11 @@ def test_add_numbers():
 
 ### 2.3 AAA（Arrange-Act-Assert）パターン
 
-PMがAIエージェントにテスト生成を指示する際は、このAAAパターンを意識させます。
+AIエージェントは自律的にテスト生成する際、AAA（Arrange-Act-Assert）パターンを使用します：
 
-1.  **Arrange**: PMがテストの前提条件（必要なデータ、モック化する対象など）を指示。
-2.  **Act**: PMがテスト対象の機能を指示。
-3.  **Assert**: PMが期待される結果や状態変化を指示。
+1.  **Arrange**: テストの前提条件を設定（必要なデータ、モック化する対象など）
+2.  **Act**: テスト対象の機能を実行
+3.  **Assert**: 期待される結果や状態変化を検証
 
 例：
 ```python
@@ -104,11 +117,13 @@ def test_user_registration():
     assert len(db.sent_emails) == 1
 ```
 
+PMはレビュー時に、AIが生成したテストがAAAパターンに従っているか、テストが機能の境界条件や異常系、**および想定されるセキュリティ攻撃パターン**を適切にカバーしているかを確認します。
+
 ## 3. フィクスチャの効果的な活用
 
 ### 3.1 フィクスチャの基本
 
-PMはAIエージェントに対し、`conftest.py` などで定義された既存のフィクスチャを積極的に利用するように指示します。これにより、AIはテストのセットアップコードを効率的に再利用できます。
+AIエージェントは、`conftest.py` などで定義された既存のフィクスチャを検出し、テスト生成時に自律的に活用します。
 
 ```python
 import pytest
@@ -116,11 +131,10 @@ import pytest
 @pytest.fixture
 def sample_data():
     """テスト用のサンプルデータを提供するフィクスチャ"""
-    # AIエージェントもこのフィクスチャを認識し、テストで利用できる
     data = {"key1": "value1", "key2": "value2"}
     return data
 
-def test_data_processing(sample_data): # AIエージェントがこのテストを生成する可能性
+def test_data_processing(sample_data): # AIエージェントが自律的に適切なフィクスチャを選択
     result = process_data(sample_data)
     assert "key1" in result
     assert result["key1"] == "processed_value1"
@@ -336,6 +350,7 @@ def test_function_with_mock(mocker):
 ### 6.1 カバレッジレポートの生成
 
 CI/CDパイプラインで生成されたカバレッジレポートをPMが確認し、カバレッジが低い箇所についてAIエージェントにテストケースの追加を指示します。
+**ただし、カバレッジ率だけを追求するのではなく、重要な機能やセキュリティに関連するコードパスがテストされていることを重視します。**
 
 ```bash
 # 基本的なカバレッジレポート
@@ -378,11 +393,11 @@ PMはプロジェクトのカバレッジ目標を設定し、AIエージェン�
 
 ### 7.1 GitHub Actionsでの統合例
 
-CI/CDパイプラインは、AIエージェントによるコード変更に対する自動的な品質チェック機構として機能します。テスト失敗時には、PMがログを確認し、AIエージェントに修正を指示します。
+CI/CDパイプラインは、AIエージェントによるコード変更に対する自動的な品質・**セキュリティ**チェック機構として機能します。テスト失敗時には、PMがログを確認し、AIエージェントに修正を指示します。
 
 ```yaml
 # .github/workflows/tests.yml
-name: Python Tests
+name: Python Tests & Security Checks
 
 on:
   push:
@@ -406,8 +421,15 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pytest pytest-cov pytest-xdist
-        pip install -e .
+        # requirements-dev.txt などで pytest, pytest-cov, SAST/SCAツールなどを管理
+        pip install -r requirements-dev.txt 
+        pip install -e . 
+    - name: Run SAST (Bandit)
+      run: bandit -r src/ -f json -o bandit-report.json || echo "Bandit found issues"
+    - name: Run SAST (Semgrep)
+      run: semgrep scan --config auto --json > semgrep-report.json || echo "Semgrep found issues"
+    - name: Run SCA (pip-audit)
+      run: pip-audit || echo "pip-audit found issues"
     - name: Test with pytest
       run: |
         pytest --cov=src/ --cov-report=xml
@@ -415,11 +437,20 @@ jobs:
       uses: codecov/codecov-action@v3
       with:
         file: ./coverage.xml
+    # 必要に応じて、レポートをアーティファクトとして保存するステップを追加
+    # - name: Archive reports
+    #   uses: actions/upload-artifact@v3
+    #   with:
+    #     name: security-reports
+    #     path: |
+    #       bandit-report.json
+    #       semgrep-report.json
 ```
 
 ### 7.2 テスト実行の最適化
 
 PMはAIエージェント（またはCI/CD設定）に対し、マーカーや並列実行を活用して効率的なテスト実行を指示できます。
+**セキュリティテスト (`@pytest.mark.security`) を定義し、必要に応じて選択的に実行することも検討します。**
 
 ## 8. テストデータ管理
 
@@ -535,17 +566,18 @@ def test_algorithm_performance(benchmark):
 - **不適切なテスト生成**: AIが意図しないテストを生成する場合があるため、PMによるレビューが不可欠です。
 - **既存コードへの影響**: PMはAIの変更が既存コードに悪影響を与えないか確認する必要があります。
 - **テストの独立性**: PMはAIに対し、独立したテストを生成するように指示します。
+- **セキュリティテストの不足**: AIは機能テストに偏る可能性があるため、PMはセキュリティテストの観点からもレビューし、必要に応じて追加・修正を指示します。
 
 ### 10.2 テストコードの品質維持 (AIエージェント連携)
 
-- AI生成コードもPM（またはレビュアー）がレビューし、品質を担保します。
+- AI生成コードもPM（またはレビュアー）がレビューし、品質 (**およびセキュリティ観点**) を担保します。
 - PMはAIに対し、テストユーティリティの活用やリファクタリングを指示できます。
 
 ### 10.3 AIエージェント開発におけるベストプラクティス (PM視点)
 
-- **明確な指示**: PMはテストの目的、対象、期待結果、利用すべき技術（フィクスチャ、モック）を具体的に指示します。
+- **明確な指示**: PMはテストの目的、対象、期待結果、利用すべき技術（フィクスチャ、モック）、**考慮すべきセキュリティシナリオ**を具体的に指示します。
 - **段階的な生成と確認 (Human-In-The-Loop)**: PMはAIに段階的にテストを生成させ、各ステップで結果を確認・フィードバックします。
-- **結果の検証**: PMはAIが生成したテストが意図通り機能し、品質向上に貢献しているかを最終的に判断します。
+- **結果の検証**: PMはAIが生成したテストが意図通り機能し、品質・**セキュリティ**向上に貢献しているかを最終的に判断します。
 - **TDDサイクルの実践**: PMが指示を出し、AIが実行し、PMが確認するという対話ループを通じて、TDDサイクル（Red→Green→Refactor）を回します。
 
 ## 11. 参考リソース
@@ -554,4 +586,5 @@ def test_algorithm_performance(benchmark):
 - [Python Testingの優れた実践](https://docs.python-guide.org/writing/tests/)
 - [Pytestチュートリアル（Real Python）](https://realpython.com/pytest-python-testing/)
 - [Effective Python Testing with Pytest](https://pragprog.com/titles/bopytest/python-testing-with-pytest/)
-- [Factory Boy ドキュメント](https://factoryboy.readthedocs.io/) 
+- [Factory Boy ドキュメント](https://factoryboy.readthedocs.io/)
+- **`devsecops_guide.md` (本プロジェクト内)** 
