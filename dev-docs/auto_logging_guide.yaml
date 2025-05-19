@@ -1,0 +1,106 @@
+title: Integrated Auto-Recording Prompt Guide
+introduction: This guide provides instructions for a prompt to lighten and automate development session recording. It aims to efficiently capture development records while reducing context volume.
+basic_command:
+  title: Basic Command
+  description: Execute only the following command at the beginning of the conversation to complete all settings.
+  command_example: '@dev-log-start theme="Development Theme" records_path="/path/to/dev-records"'
+  parameters:
+    - name: theme
+      description: Today's development theme (required).
+    - name: records_path
+      description: Absolute path to the development records directory (required, only for the first time).
+workspace_configuration:
+  title: Workspace Configuration
+  points:
+    - title: Workspace for Development Project Only
+      description: Do not include development records (dev-records) in the workspace. Include only the codebase being worked on.
+    - title: Access to External Directories
+      description: Access external directories using fileSystem MCP. Ensure reliable file operations by specifying absolute paths.
+automated_recording_process:
+  title: Automated Recording Process
+  description: Once the initialization process is executed, the following will be done automatically.
+  steps:
+    - title: Obtain Date and Sequence Number
+      points:
+        - Today's date (YYYY-MM-DD format).
+        - Sequence number (latest file number + 1).
+        - Filename format YYYY-MM-DD_NNN_development.md.
+        - Important Filename must always use "development" and not include the theme name. The theme name will be written in the file content.
+    - title: Apply Basic Template
+      template_example: |
+        # YYYY-MM-DD development
+
+        ## Today's Development Theme
+
+        Today's development theme is [Theme].
+
+        ## Activity History up to Previous Day
+        Activity history up to the previous day is as follows:
+        * YYYY-MM-DD: [Activity Content] (Filename: YYYY-MM-DD_NNN_development.md)
+
+        ## Conversation Log
+
+        - User: [First message]
+        - LLM: [Response]
+        ...
+conversation_log_format_standard:
+  title: Conversation Log Format Standard
+  basic_format:
+    title: Basic Format
+    example: |
+      ## Conversation Log
+
+      - User: [User's message content]
+      - LLM: [LLM's response content]
+        (If tools are used, record a summary of the tool call and its result)
+  recording_details:
+    title: Recording Details
+    points:
+      - title: Agent's Actions
+        description: When LLM executes tools (edit_file, run_command, etc.), record the tool name and a summary of the changes.
+        tool_call_example: |
+          (tool_code <Tool Name> executed. Result summary: <Change details>)
+        error_handling: Also summarize errors and execution results.
+      - title: Conversation Flow
+        description: Do not omit the essential content of the conversation. Record the flow of discussion and decisions made for each interaction.
+      - title: Recording Optimization
+        description: Fully record important interactions. Summarize large outputs. Ensure reliability with auto-save points.
+  recording_example:
+    title: Recording Example
+    example: |
+      - User: Please create a new file `server.py` and implement a simple API endpoint with Flask.
+      - LLM: I will create `server.py` and implement a `/hello` endpoint with Flask.
+      (tool_code edit_file executed. Result summary: Created Flask application in `server.py`)
+development_diary_structure:
+  title: Development Diary Structure
+  example: |
+    # YYYY-MM-DD development
+
+    ## Today's Development Theme
+    [Description of the theme]
+
+    ## Activity History up to Previous Day
+    [List activity history up to the previous day in bullet points]
+
+    ## Conversation Log
+    [Conversation log according to the format above]
+
+    ## Summary
+    [Concise summary of the content and main achievements]
+important_notes:
+  title: Important Notes
+  points:
+    - `records_path` setting is required only for the first use.
+    - Appropriate permissions are required to use fileSystem MCP.
+    - For long sessions, periodically check the save status.
+end_of_session_processing:
+  title: End-of-Session Processing
+  description: When the development session ends (upon user instruction), perform the following.
+  steps:
+    - title: Confirm Development Record
+      description: Check the development record file to ensure conversation content is correctly recorded. Add any unrecorded interactions.
+    - title: Record End Time
+      description: Record the development end time.
+    - title: Backup Process
+      description: As a backup in case auto-recording fails, review the entire conversation history. Add any unrecorded interactions.
+  purpose: This process ensures the completeness of development records even if auto-recording does not function normally.
