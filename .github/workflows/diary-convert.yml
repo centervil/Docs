@@ -24,51 +24,48 @@ jobs:
         run: |
           # スクリプトに実行権限を付与
           chmod +x ./tools/diary-filename-processor.sh
+          chmod +x ./tools/find-latest-diary.sh
+          chmod +x ./tools/find-prev-article.sh
+          chmod +x ./tools/replace_template_placeholders.sh
+          chmod +x ./tools/document_processor.py
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x' # 最新のPython 3系を使用
+
+      - name: Install Content-Converter
+        run: |
+          pip install pyyaml python-frontmatter requests python-dotenv markdown pydantic
 
       - name: Find latest updated diary file
         id: find-diary
         run: |
-          # 最新の開発日記ファイルを検出
-          LATEST_DIARY=$(find dev-records -type f -name "*.md" | sort -r | head -n 1)
-          
-          echo "LATEST_DIARY: $LATEST_DIARY" 
-          
-          # Zenn用のファイル名を生成
-          OUTPUT_FILENAME=$(./tools/diary-filename-processor.sh "$LATEST_DIARY")
-          
-          echo "OUTPUT_FILENAME: $OUTPUT_FILENAME"
-          
-          # articlesディレクトリの存在確認
-          mkdir -p articles
-          
-          echo "diary_file=$LATEST_DIARY" >> $GITHUB_OUTPUT
-          echo "output_file=articles/$OUTPUT_FILENAME" >> $GITHUB_OUTPUT
-          echo "LATEST_DIARY=$LATEST_DIARY" >> $GITHUB_ENV
+          eval $(./tools/find-latest-diary.sh)
+          echo "diary_file=${diary_file}" >> $GITHUB_OUTPUT
+          echo "output_file=${output_file}" >> $GITHUB_OUTPUT
+          echo "LATEST_DIARY=${diary_file}" >> $GITHUB_ENV
 
       - name: Find previous article slug
         id: find-prev-article
         run: |
-          # 前回の記事スラッグを検出
-          LATEST_ARTICLE=$(find articles -type f -name "*.md" | sort -r | head -n 1)
-          if [ -n "$LATEST_ARTICLE" ]; then
-            PREV_ARTICLE_SLUG=$(basename "$LATEST_ARTICLE" .md)
-            echo "PREV_ARTICLE_SLUG: $PREV_ARTICLE_SLUG"
-            echo "prev_article_slug=$PREV_ARTICLE_SLUG" >> $GITHUB_OUTPUT
-          else
-            echo "前回の記事が見つかりません"
-            echo "prev_article_slug=" >> $GITHUB_OUTPUT
-          fi
+          eval $(./tools/find-prev-article.sh)
+          echo "prev_article_slug=${prev_article_slug}" >> $GITHUB_OUTPUT
 
-      - name: Run diary-converter
-        uses: centervil/Diary-Converter@main
-        with:
-          source_file: ${{ steps.find-diary.outputs.diary_file }}
-          destination_file: ${{ steps.find-diary.outputs.output_file }}
-          api_key: ${{ secrets.GOOGLE_API_KEY }}
-          model: ${{ secrets.LLM_MODEL }}
-          debug: 'true'
-          prev_article: ${{ steps.find-prev-article.outputs.prev_article_slug }}
-          template: templates/zenn_template.md
+      - name: Replace placeholders in Zenn template
+        run: |
+          ./tools/replace_template_placeholders.sh "${{ secrets.LLM_MODEL }}" "${{ steps.find-prev-article.outputs.prev_article_slug }}" templates/zenn_template.md templates/zenn_template_filled.md
+
+      - name: Run Content-Converter
+        env:
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          LLM_MODEL: ${{ secrets.LLM_MODEL }}
+        run: |
+          content-converter --input "${{ steps.find-diary.outputs.diary_file }}" --output "${{ steps.find-diary.outputs.output_file }}" --template templates/zenn_template_filled.md --prompt prompts/zenn_article_prompt.txt
+
+      - name: Post-process generated article
+        run: |
+          python ./tools/document_processor.py "${{ steps.find-diary.outputs.output_file }}"
 
       - name: Commit and push changes
         run: |
