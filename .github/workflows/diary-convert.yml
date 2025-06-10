@@ -61,7 +61,7 @@ jobs:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           LLM_MODEL: ${{ secrets.LLM_MODEL }}
         run: |
-          content-converter --input "${{ steps.find-diary.outputs.diary_file }}" --output "${{ steps.find-diary.outputs.output_file }}" --template templates/zenn_template_filled.md --prompt prompts/zenn_article_prompt.txt
+          python -m content_converter.cli --input "${{ steps.find-diary.outputs.diary_file }}" --output "${{ steps.find-diary.outputs.output_file }}" --template templates/zenn_template_filled.md --prompt prompts/zenn_article_prompt.txt
 
       - name: Post-process generated article
         run: |
