@@ -36,7 +36,7 @@ jobs:
 
       - name: Install Content-Converter
         run: |
-          pip install pyyaml python-frontmatter requests python-dotenv markdown pydantic
+          pip install -r https://raw.githubusercontent.com/centervil/Content-Converter/refs/heads/main/requirements.txt
 
       - name: Find latest updated diary file
         id: find-diary
