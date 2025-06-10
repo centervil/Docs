@@ -3,8 +3,5 @@ node_modules
 temp/
 .Identifier
 .env
-
-# windsurf rules
-.windsurfrules
 .specstory/
 *.venv
