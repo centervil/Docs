@@ -57,12 +57,12 @@ jobs:
         run: |
           ./tools/replace_template_placeholders.sh "${{ secrets.LLM_MODEL }}" "${{ steps.find-prev-article.outputs.prev_article_slug }}" templates/zenn_template.md templates/zenn_template_filled.md
 
-      - name: Debug: Show filled Zenn template
+      - name: Show filled Zenn template
         run: |
           echo '===== templates/zenn_template_filled.md ====='
           cat templates/zenn_template_filled.md
 
-      - name: Debug: Show prompt file
+      - name: Show prompt file
         run: |
           echo '===== prompts/zenn_article_prompt.txt ====='
           cat prompts/zenn_article_prompt.txt
@@ -74,7 +74,7 @@ jobs:
         run: |
           python -m content_converter.cli --input "${{ steps.find-diary.outputs.diary_file }}" --output "${{ steps.find-diary.outputs.output_file }}" --template templates/zenn_template_filled.md --prompt prompts/zenn_article_prompt.txt
 
-      - name: Debug: Show generated article before post-process
+      - name: Show generated article before post-process
         run: |
           echo '===== Generated Article (before post-process) ====='
           cat "${{ steps.find-diary.outputs.output_file }}"
