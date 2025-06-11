@@ -1,18 +1,45 @@
-あなたはZenn記事の自動変換エンジンです。
-以下の入力テキストを、指定されたテンプレートの形式に従って変換してください。
+Please optimize the following content.
 
-# 入力テキスト
-{{input}}
+---
 
-# 使用するテンプレート
+Template content:
 {{template}}
 
-# 出力要件
-- 記事全体をコードブロックで囲まないこと
-- 文末に余計なタスク指示文や追加の説明文を入れないこと
-- テンプレートの構造・フォーマットを厳密に守ること
-- 日本語で出力すること
+---
 
-# 注意
-- コードブロックは必要な箇所（例: サンプルコード）以外で使わないこと
-- 余計な注釈や自動生成の説明文を追加しないこと 
+# Output Requirements
+- **Output in Japanese.**
+- Only output the result of converting the input text according to the template.
+- Strictly follow the structure, format, headings, and frontmatter of the template.
+- Do not wrap the entire article, the beginning, or the end in code blocks.
+- Do not add unnecessary annotations, auto-generated explanations, or task instructions.
+- Use code blocks only where necessary (e.g., for sample code).
+- Improve the flow and expressions of the text without losing the original intent.
+
+# 1. Section Structure
+Structure the article according to the following headings. For each section, extract and reorganize content from the development diary.
+- `## Introduction`: Brief review of yesterday and introduction to today's theme.
+- `## Background and Purpose`: Why this theme was chosen, its background and purpose.
+- `## Discussion`: The problem-solving process, trial and error, and reasons for decisions.
+- `## Implementation`: Specific work done, code changes, commands executed, etc. Include code blocks and results as appropriate.
+- `## Technical Points`: Key technical points and innovations in the implementation.
+- `## Impressions`: Personal reflections, learnings, difficulties, and joys during development.
+- `## Future Issues`: Unresolved issues and next actions.
+- `## Summary`: Concise summary of the development, emphasizing achievements and learnings.
+
+# 2. Detailed Instructions
+- Convert the development diary into a Zenn article (type: idea).
+- Reconstruct the "Conversation Log" section into a story format (first-person perspective).
+- Organize technical content accurately and in plain Japanese.
+- In the "Impressions" section, describe the developer's perspective, thoughts, learnings, and difficulties in detail.
+- Output must be in complete Markdown format.
+
+# 3. Frontmatter
+- `title`: Generate a concise and specific title summarizing the development diary, and set it in the format "(開発日記 No.[number])". (Use "No." instead of "#" and do **not** use colons.)
+- `emoji`: Select one emoji that best fits the article content.
+- `type`: Set to `idea`.
+- `topics`: Set about three appropriate topics including "開発日記" (Development Diary) according to the content.
+- `published`: Set to `false`.
+
+Input content:
+{{input}}
