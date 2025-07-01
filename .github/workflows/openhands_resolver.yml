@@ -84,6 +84,13 @@ jobs:
         with:
           fetch-depth: 0
           submodules: true
+          token: ${{ secrets.PAT_TOKEN }}
+
+      - name: Debug Submodule Access
+        run: |
+          echo "Attempting to access submodule repository using PAT..."
+          git config --global url."https://x-token-auth:${{ secrets.PAT_TOKEN }}@github.com/".insteadOf "https://github.com/"
+          git ls-remote https://github.com/centervil/my-cursor-rules.git || echo "Submodule access failed. Check PAT scope and repository visibility."
 
       - name: Set up Python
         uses: actions/setup-python@v5
