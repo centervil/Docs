@@ -244,24 +244,16 @@ jobs:
               await exec.exec("pip install -r /tmp/requirements.txt");
             }
 
-      - name: Attempt to resolve issue
-        env:
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN || github.token }}
-          GITHUB_USERNAME: ${{ secrets.PAT_USERNAME || 'openhands-agent' }}
-          GIT_USERNAME: ${{ secrets.PAT_USERNAME || 'openhands-agent' }}
-          LLM_MODEL: ${{ secrets.LLM_MODEL || inputs.LLM_MODEL }}
-          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
-          LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
-          LLM_API_VERSION: ${{ inputs.LLM_API_VERSION }}
-          PYTHONPATH: ""
+      - name: Run OpenHands workflow
         run: |
+          git config --global url."https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/".insteadOf "https://github.com/"
           cd /tmp && python -m openhands.resolver.resolve_issue \
             --selected-repo ${{ github.repository }} \
             --issue-number ${{ env.ISSUE_NUMBER }} \
             --issue-type ${{ env.ISSUE_TYPE }} \
             --max-iterations ${{ env.MAX_ITERATIONS }} \
             --comment-id ${{ env.COMMENT_ID }} \
-            --is-experimental ${{ steps.install_openhands.outputs.isExperimental }}
+            --is-experimental false
 
       - name: Check resolution result
         id: check_result
