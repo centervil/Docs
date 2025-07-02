@@ -88,7 +88,7 @@ jobs:
           set -euxo pipefail
           git config --global user.name "GitHub Actions Bot"
           git config --global user.email "actions@github.com"
-          git add articles/
+          git add -A
           git commit -m "Add new Zenn article from ${{ env.LATEST_DIARY }}" || echo "Nothing to commit"
           git pull --rebase origin main
           git push origin main
