@@ -6,3 +6,9 @@ temp/
 .specstory/
 *.venv
 venv/
+# Ignore symbolic links
+.github/copilot-instructions.md
+.cursor/rules/
+.cline/rules/
+.windsurf/workflows/
+.windsurf/rules/
