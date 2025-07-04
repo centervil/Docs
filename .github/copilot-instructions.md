@@ -1,1 +1,0 @@
-../rules-common/adapters/copilot-instructions.md

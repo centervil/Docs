@@ -1,1 +1,0 @@
-../../rules-common/adapters/windsurf_adapter.md
