@@ -52,24 +52,27 @@ class DocumentProcessor:
         # 先頭がコードブロックマーカーで始まり、末尾がコードブロックマーカーで終わるかチェック
         # ここで、言語指定の有無も考慮する
         starts_with_code_block_match = re.match(r"^```(?:[a-zA-Z]+\s*)?", trimmed_content)
-        ends_with_code_block = trimmed_content.endswith('```')
 
-        if starts_with_code_block_match and ends_with_code_block:
-            self.logger.debug("ドキュメント全体がコードブロックで囲まれています。削除を試みます。")
+        if starts_with_code_block_match:
+            self.logger.debug("ドキュメント冒頭にコードブロックマーカーを検出しました。")
             
-            # 先頭のコードブロックマーカーを削除
             content_after_start = trimmed_content[starts_with_code_block_match.end():]
             
-            # 末尾のコードブロックマーカーを削除
-            # rstrip()で確実に末尾の空白を削除してから```を削除
-            content_without_end = content_after_start.rstrip()
-            if content_without_end.endswith('```'): # 再度確認（念のため）
-                content_without_end = content_without_end[:-3].rstrip()
-                
-            self.logger.debug("コードブロックを削除しました。")
-            return content_without_end
+            # 末尾にもコードブロックマーカーがあるかチェック
+            ends_with_code_block = content_after_start.rstrip().endswith('```')
+
+            if ends_with_code_block:
+                self.logger.debug("ドキュメント全体がコードブロックで囲まれています。削除を試みます。")
+                # 末尾のコードブロックマーカーを削除
+                content_without_end = content_after_start.rstrip()[:-3].rstrip()
+                self.logger.debug("囲むコードブロックを削除しました。")
+                return content_without_end
+            else:
+                self.logger.debug("冒頭のコードブロックマーカーのみを削除します。")
+                # 末尾のコードブロックマーカーがない場合、先頭のマーカーのみを削除
+                return content_after_start.lstrip() # 先頭の空白も削除
         else:
-            self.logger.debug("ドキュメント全体を囲むコードブロックは見つかりませんでした。")
+            self.logger.debug("ドキュメント冒頭にコードブロックマーカーは見つかりませんでした。")
             return content # 変更なし
 
     def process(self, input_file: str, output_file: Optional[str] = None) -> bool:
