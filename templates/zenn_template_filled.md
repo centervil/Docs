@@ -12,7 +12,7 @@ published: false
 
 ## 関連リンク
 
-- [前回の開発日記](https://zenn.dev/centervil/articles/2025-07-10_127_dev-diary)
+- [前回の開発日記](https://zenn.dev/centervil/articles/2025-07-11_128-development)
 
 ## はじめに
 <!-- LLMが生成 -->
